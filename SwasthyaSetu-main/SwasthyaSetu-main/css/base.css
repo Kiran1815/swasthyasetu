@@ -1,0 +1,188 @@
+/* ═══════════════════════════════════════════════════
+   SwasthyaSetu — base.css
+   Design tokens, resets, typography, layout shell
+═══════════════════════════════════════════════════ */
+
+:root {
+  /* Color tokens */
+  --color-safe:           #1B8A5A;
+  --color-safe-light:     #E8F5EF;
+  --color-trust:          #1A56DB;
+  --color-trust-light:    #EBF0FC;
+  --color-emergency:      #E02020;
+  --color-emergency-light:#FEE8E8;
+  --color-caution:        #D97706;
+  --color-caution-light:  #FEF3CD;
+  --color-urgent:         #EA580C;
+  --color-urgent-light:   #FFF0E8;
+  --color-surface:        #F7F9FC;
+  --color-white:          #FFFFFF;
+  --color-ink:            #1E293B;
+  --color-ink-secondary:  #334155;
+  --color-muted:          #64748B;
+  --color-border:         #E2E8F0;
+  --color-border-strong:  #CBD5E1;
+
+  /* Typography */
+  --font-primary:   'DM Sans', system-ui, sans-serif;
+  --font-display:   'DM Serif Display', Georgia, serif;
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-base: 15px;
+  --font-size-md:   17px;
+  --font-size-lg:   20px;
+  --font-size-xl:   24px;
+  --font-size-2xl:  30px;
+  --font-size-3xl:  38px;
+  --line-height-body: 1.65;
+
+  /* Elevation */
+  --shadow-xs:      0 1px 2px rgba(0,0,0,0.05);
+  --shadow-card:    0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-modal:   0 24px 80px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-floating:0 4px 20px rgba(0,0,0,0.12);
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* Easing */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Timing */
+  --transition-fast: 160ms;
+  --transition-base: 280ms;
+  --transition-slow: 480ms;
+
+  /* Layout */
+  --nav-height:        64px;
+  --bottom-nav-height: 68px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  line-height: var(--line-height-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 99px; }
+
+/* ── Layout shell ── */
+#main-content {
+  padding-top: var(--nav-height);
+  padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  min-height: 100vh;
+}
+
+/* ── Small Phones (≤375px) ── */
+@media (max-width: 375px) {
+  :root { --nav-height: 56px; --bottom-nav-height: 60px; }
+}
+
+/* ── Tablet (768px – 1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --nav-height: 72px; --bottom-nav-height: 72px; }
+  #main-content   { max-width: 720px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+  #a11y-fab       { right: calc(50% - 360px + 16px); }
+  #a11y-panel     { right: calc(50% - 360px + 16px); }
+}
+
+/* ── Desktop (1024px+) ── */
+@media (min-width: 1024px) {
+  :root { --nav-height: 76px; --bottom-nav-height: 72px; }
+  #main-content   { max-width: 960px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+  #a11y-fab       { right: calc(50% - 480px + 20px); }
+  #a11y-panel     { right: calc(50% - 480px + 20px); width: 300px; }
+}
+
+/* ── Large Desktop (1440px+) ── */
+@media (min-width: 1440px) {
+  #main-content   { max-width: 1100px; }
+  #a11y-fab       { right: calc(50% - 550px + 24px); }
+  #a11y-panel     { right: calc(50% - 550px + 24px); }
+}
+
+/* ── Views ── */
+.view { display: none; animation: slide-in var(--transition-slow) var(--ease-out); }
+.view.active { display: block; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Utility layout helpers ── */
+.card-grid  { display: grid; gap: 12px; padding: 0 16px; }
+.card-row   { display: flex; gap: 12px; }
+.divider    { height: 1px; background: var(--color-border); margin: 8px 0; }
+
+/* Responsive padding for view children with inline padding */
+.view > [style*="padding: 0 16px"],
+.view > [style*="padding:0 16px"],
+.view > div[style*="padding: 0 16px"],
+.view > div[style*="padding:0 16px"] {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .view > [style*="padding: 0 16px"],
+  .view > [style*="padding:0 16px"],
+  .view > div[style*="padding: 0 16px"],
+  .view > div[style*="padding:0 16px"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+.section-header {
+  padding: 24px 20px 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.section-title    { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-ink); letter-spacing: -0.4px; }
+.section-subtitle { font-size: 13px; color: var(--color-muted); margin-top: 2px; }
+.section-link     { font-size: 13px; color: var(--color-trust); font-weight: 500; cursor: pointer; text-decoration: none; }
+
+/* ── Empty state ── */
+.empty-state       { text-align: center; padding: 48px 24px; }
+.empty-state-icon  { font-size: 48px; margin-bottom: 14px; opacity: 0.5; }
+.empty-state-text  { font-size: 15px; color: var(--color-muted); }
+
+/* ── Responsive tweaks ── */
+
+/* Small phones */
+@media (max-width: 375px) {
+  .hero-title { font-size: 26px; }
+  .section-header { padding: 16px 16px 12px; }
+  .section-title  { font-size: var(--font-size-lg); }
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0; }
+  .section-header { padding: 28px 0 18px; }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .card-grid { gap: 20px; }
+  .section-title { font-size: var(--font-size-2xl); }
+}

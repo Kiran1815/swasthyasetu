@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwasthyaSetu — Intelligent Rural Healthcare Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/views.css">
+<link rel="stylesheet" href="css/accessibility.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- EMERGENCY OVERLAY -->
+<div id="emergency-overlay">
+  <div class="emergency-icon">🚨</div>
+  <div class="emergency-title" data-i18n="emergency.title">MEDICAL EMERGENCY</div>
+  <div class="emergency-subtitle" data-i18n="emergency.subtitle">High-risk symptoms detected. Immediate medical attention required.</div>
+  <div class="emergency-actions">
+    <button class="btn-ambulance" onclick="callAmbulance()" data-i18n="emergency.call">🚑 Call Ambulance Now — 108</button>
+    <button class="btn-dismiss-emergency" onclick="dismissEmergency()" data-i18n="emergency.firstAid">View First Aid Steps Instead</button>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast"></div>
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" data-i18n="offline.banner">📶 Offline Mode — Cached data shown. SMS fallback active.</div>
+
+<!-- SMS BANNER -->
+<div id="sms-banner" data-i18n="sms.banner">📱 Low bandwidth mode: SMS alerts enabled. Critical info will be sent as text messages.</div>
+
+<!-- TOP HEADER -->
+<header id="app-header">
+  <div class="header-brand">
+    <div class="brand-logo">⚕</div>
+    <div>
+      <div class="brand-name" data-i18n="brand.name">SwasthyaSetu</div>
+      <div class="brand-tagline" data-i18n="brand.tagline">Intelligent Rural Healthcare</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <select class="lang-selector" onchange="changeLanguage(this.value)">
+      <option value="en">🇮🇳 EN</option>
+      <option value="hi">हिं</option>
+      <option value="kn">ಕನ್ನ</option>
+      <option value="te">తెలుగు</option>
+    </select>
+    <button class="btn-sos" onclick="triggerEmergency()" data-i18n="sos">🆘 SOS</button>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main id="main-content">
+
+  <!-- HOME VIEW -->
+  <div id="view-home" class="view active">
+    <div class="stats-ticker">
+      <div class="ticker-item"><div class="ticker-dot"></div><span id="stat-consultations">1,247 consultations today</span></div>
+      <div class="ticker-divider">|</div>
+      <div class="ticker-item"><div class="ticker-dot"></div><span data-i18n="stats.clinics">23 mobile clinics active</span></div>
+      <div class="ticker-divider">|</div>
+      <div class="ticker-item"><div class="ticker-dot"></div><span data-i18n="stats.families">4,891 families connected</span></div>
+    </div>
+    <div class="hero-section">
+      <div class="hero-eyebrow" data-i18n="hero.eyebrow">Government of India · National Health Mission</div>
+      <div class="hero-title" data-i18n="hero.title">Healthcare for Every<br>Indian Village</div>
+      <div class="hero-subtitle" data-i18n="hero.subtitle">AI-powered care connecting rural families to doctors, medicines, and mobile clinics — instantly.</div>
+      <div class="hero-cta">
+        <button class="btn-hero" onclick="navigateTo('consult')" data-i18n="hero.checkSymptoms">🩺 Check Symptoms</button>
+        <button class="btn-hero-outline" onclick="navigateTo('clinic')" data-i18n="hero.findClinic">🚐 Find Clinic</button>
+      </div>
+    </div>
+    <div class="emergency-strip" onclick="navigateTo('consult'); setEmergencyMode()">
+      <div class="emergency-strip-left">
+        <div class="emergency-strip-icon">🚨</div>
+        <div>
+          <div class="emergency-strip-title" data-i18n="strip.title">Emergency? Get Help Now</div>
+          <div class="emergency-strip-sub" data-i18n="strip.sub">Tap for immediate AI triage + ambulance contact</div>
+        </div>
+      </div>
+      <div class="emergency-strip-arrow">›</div>
+    </div>
+    <div class="quick-actions">
+      <div class="quick-action" onclick="navigateTo('consult')">
+        <div class="quick-action-icon" style="background:#EBF0FC">🤖</div>
+        <div class="quick-action-label" data-i18n="quick.aiHealth">AI Health Check</div>
+      </div>
+      <div class="quick-action" onclick="navigateTo('medicines')">
+        <div class="quick-action-icon" style="background:#E8F5EF">💊</div>
+        <div class="quick-action-label" data-i18n="quick.orderMedicine">Order Medicine</div>
+      </div>
+      <div class="quick-action" onclick="navigateTo('clinic')">
+        <div class="quick-action-icon" style="background:#FEF3CD">🚐</div>
+        <div class="quick-action-label" data-i18n="quick.mobileClinic">Mobile Clinic</div>
+      </div>
+      <div class="quick-action" onclick="navigateTo('family')">
+        <div class="quick-action-icon" style="background:#F0FDF4">👨‍👩‍👧</div>
+        <div class="quick-action-label" data-i18n="quick.familyHealth">Family Health</div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="sec.recDoctors">Recommended Doctors</div>
+        <div class="section-subtitle" data-i18n="sec.nearYou">Available near you · Updated now</div>
+      </div>
+      <a class="section-link" onclick="navigateTo('consult')" data-i18n="sec.seeAll">See all</a>
+    </div>
+    <div class="card-grid" id="home-doctor-list"></div>
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="sec.healthToday">Your Health Today</div>
+        <div class="section-subtitle" data-i18n="sec.familyRisk">Family risk summary</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px 24px">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px">
+          <div style="font-size:28px">👨‍👩‍👧</div>
+          <div>
+            <div style="font-size:15px; font-weight:700" data-i18n="home.sharmaFamily">Sharma Family</div>
+            <div style="font-size:12px; color:var(--color-muted)" data-i18n="home.membersChecked">5 members · Last checked: Today</div>
+          </div>
+          <div style="margin-left:auto"><span class="badge badge-safe" data-i18n="home.stable">✓ Stable</span></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px">
+          <div style="text-align:center; padding:12px 6px; background:var(--color-safe-light); border-radius:8px">
+            <div style="font-size:22px; font-weight:700; color:var(--color-safe)">2</div>
+            <div style="font-size:10px; color:var(--color-muted)" data-i18n="home.dueCheckups">Due Checkups</div>
+          </div>
+          <div style="text-align:center; padding:12px 6px; background:var(--color-trust-light); border-radius:8px">
+            <div style="font-size:22px; font-weight:700; color:var(--color-trust)">3</div>
+            <div style="font-size:10px; color:var(--color-muted)" data-i18n="home.activeMeds">Active Meds</div>
+          </div>
+          <div style="text-align:center; padding:12px 6px; background:var(--color-caution-light); border-radius:8px">
+            <div style="font-size:22px; font-weight:700; color:var(--color-caution)">1</div>
+            <div style="font-size:10px; color:var(--color-muted)" data-i18n="home.watchAlert">Watch Alert</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSULT VIEW -->
+  <div id="view-consult" class="view">
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="consult.title">AI Health Assistant</div>
+        <div class="section-subtitle" data-i18n="consult.subtitle">Describe symptoms — get instant guidance</div>
+      </div>
+    </div>
+    <div class="consult-for-member" style="padding:0 16px 12px">
+      <label style="font-size:12px; font-weight:700; color:var(--color-muted); text-transform:uppercase; letter-spacing:0.5px" data-i18n="consult.consultFor">Consulting for</label>
+      <select id="consult-member-select" class="input" style="margin-top:4px" onchange="onConsultMemberChange(this.value)">
+      </select>
+    </div>
+    <div style="display:flex; gap:6px; padding:0 16px 16px">
+      <button class="btn btn-primary btn-sm" id="tab-voice" onclick="switchInputTab('voice')" data-i18n="consult.voice">🎙 Voice</button>
+      <button class="btn btn-ghost btn-sm" id="tab-text" onclick="switchInputTab('text')" data-i18n="consult.text">⌨️ Text</button>
+      <button class="btn btn-ghost btn-sm" id="tab-icons" onclick="switchInputTab('icons')" data-i18n="consult.icons">🖼 Icons</button>
+    </div>
+    <!-- Voice Input -->
+    <div id="input-voice" style="padding:0 16px 20px; display:flex; flex-direction:column; align-items:center; gap:16px">
+      <div style="text-align:center">
+        <div style="font-size:13px; color:var(--color-muted); margin-bottom:14px" data-i18n="consult.pressMic">Press to describe your symptoms</div>
+        <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">🎤<div class="voice-ring"></div></button>
+      </div>
+      <div id="voice-transcript" style="min-height:48px; width:100%; background:var(--color-white); border:1.5px solid var(--color-border); border-radius:var(--radius-md); padding:12px 16px; font-size:14px; color:var(--color-muted); text-align:center; line-height:1.6" data-i18n="consult.tapMic">
+        Tap microphone to start speaking...
+      </div>
+      <button class="btn btn-primary btn-full" id="voice-analyze-btn" style="display:none" onclick="analyzeFromVoice()" data-i18n="consult.analyze">Analyze Symptoms →</button>
+    </div>
+    <!-- Text Input -->
+    <div id="input-text" style="padding:0 16px 20px; display:none">
+      <div class="input-group" style="margin-bottom:12px">
+        <label class="input-label" data-i18n="consult.describe">Describe your symptoms</label>
+        <textarea id="symptom-text" class="input" rows="4" data-i18n-placeholder="consult.placeholder" placeholder="E.g., I have chest pain, sweating, and shortness of breath for the past 2 hours..." style="resize:none; line-height:1.6"></textarea>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px">
+        <div class="input-group">
+          <label class="input-label" data-i18n="consult.age">Your Age</label>
+          <input type="number" id="patient-age" class="input" placeholder="Age" value="35">
+        </div>
+        <div class="input-group">
+          <label class="input-label" data-i18n="consult.duration">Duration</label>
+          <select id="symptom-duration" class="input">
+            <option value="1" data-i18n="consult.justStarted">Just started</option>
+            <option value="2" data-i18n="consult.fewHours">Few hours</option>
+            <option value="3" selected data-i18n="consult.1to2days">1–2 days</option>
+            <option value="4" data-i18n="consult.3to7days">3–7 days</option>
+            <option value="5" data-i18n="consult.overWeek">Over a week</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-group" style="margin-bottom:14px">
+        <label class="input-label" data-i18n="consult.chronic">Any chronic conditions?</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px" id="chronic-tags">
+          <button class="btn btn-ghost btn-sm" onclick="toggleChronic(this, 'diabetes')" data-i18n="consult.diabetes">Diabetes</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleChronic(this, 'bp')" data-i18n="consult.highBP">High BP</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleChronic(this, 'heart')" data-i18n="consult.heartDisease">Heart Disease</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleChronic(this, 'asthma')" data-i18n="consult.asthma">Asthma</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleChronic(this, 'none')" data-i18n="consult.none">None</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="analyzeSymptoms()" data-i18n="consult.analyzeAI">🤖 Analyze with AI →</button>
+    </div>
+    <!-- Icon Input -->
+    <div id="input-icons" style="padding:0 16px 20px; display:none">
+      <div style="font-size:13px; color:var(--color-muted); margin-bottom:12px; text-align:center" data-i18n="consult.tapArea">Tap the area where you feel pain or discomfort</div>
+      <div class="symptom-grid" id="symptom-icon-grid"></div>
+      <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div class="input-group">
+          <label class="input-label" data-i18n="consult.age">Your Age</label>
+          <input type="number" id="icon-age" class="input" placeholder="Age" value="35">
+        </div>
+        <div class="input-group">
+          <label class="input-label" data-i18n="consult.severity">Severity</label>
+          <select id="icon-severity" class="input">
+            <option value="2" data-i18n="consult.mild">Mild</option>
+            <option value="5" selected data-i18n="consult.moderate">Moderate</option>
+            <option value="8" data-i18n="consult.severe">Severe</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" style="margin-top:14px" onclick="analyzeFromIcons()" data-i18n="consult.analyzeSel">🤖 Analyze Selected Symptoms →</button>
+    </div>
+    <div id="ai-result-container" style="display:none"></div>
+    <div id="doctor-matches" style="display:none">
+      <div class="section-header">
+        <div>
+          <div class="section-title" data-i18n="consult.matched">Matched Doctors</div>
+          <div class="section-subtitle" data-i18n="consult.ranked">Ranked by availability &amp; proximity</div>
+        </div>
+      </div>
+      <div class="card-grid" id="doctor-match-list"></div>
+    </div>
+
+    <!-- NEARBY HEALTHCARE FACILITIES -->
+    <div id="nearby-healthcare" style="display:none">
+      <div class="section-header">
+        <div>
+          <div class="section-title" data-i18n="nearby.title">🏥 Nearby Healthcare</div>
+          <div class="section-subtitle" data-i18n="nearby.subtitle">Real hospitals, clinics &amp; doctors near you</div>
+        </div>
+      </div>
+      <div id="nearby-specialist-tag" style="padding:0 16px 12px">
+        <span class="badge badge-trust" id="nearby-spec-badge"></span>
+      </div>
+      <div id="nearby-loading" style="text-align:center; padding:24px 16px; display:none">
+        <div class="nearby-spinner"></div>
+        <div style="font-size:13px; color:var(--color-muted); margin-top:10px" data-i18n="nearby.searching">Searching nearby healthcare facilities...</div>
+      </div>
+      <div class="card-grid" id="nearby-results-list"></div>
+    </div>
+
+    <!-- MAP SECTION -->
+    <div id="nearby-map-section" style="display:none">
+      <div class="section-header">
+        <div>
+          <div class="section-title" data-i18n="nearby.mapTitle">🗺️ Healthcare Map</div>
+          <div class="section-subtitle" data-i18n="nearby.mapSub">Hospitals, clinics &amp; RMP doctors around you</div>
+        </div>
+      </div>
+      <div style="padding:0 16px 24px">
+        <div id="nearby-map" class="nearby-map-container"></div>
+        <div id="map-legend" class="map-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#E74C3C"></span> <span data-i18n="nearby.hospital">Hospital</span></span>
+          <span class="legend-item"><span class="legend-dot" style="background:#3498DB"></span> <span data-i18n="nearby.clinic">Clinic</span></span>
+          <span class="legend-item"><span class="legend-dot" style="background:#2ECC71"></span> <span data-i18n="nearby.doctor">Doctor/RMP</span></span>
+          <span class="legend-item"><span class="legend-dot" style="background:#F39C12"></span> <span data-i18n="nearby.pharmacy">Pharmacy</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDICINES VIEW -->
+  <div id="view-medicines" class="view">
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="med.title">Medicine Delivery</div>
+        <div class="section-subtitle" data-i18n="med.subtitle">Prescriptions → Pharmacy → Your door</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px">
+      <div class="prescription-card" id="active-prescription">
+        <div class="prescription-header">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px">
+            <div style="font-size:28px">📋</div>
+            <div>
+              <div style="font-size:16px; font-weight:700" data-i18n="med.rxId">Prescription #SS-20240223</div>
+              <div style="font-size:12px; opacity:0.8" data-i18n="med.rxBy">Dr. Mohammed Rafiq · Feb 23, 2026</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px">
+            <span class="badge" style="background:rgba(255,255,255,0.2); color:white" data-i18n="med.verified">✓ Verified</span>
+            <span class="badge" style="background:rgba(255,255,255,0.2); color:white" data-i18n="med.valid">Valid 30 days</span>
+          </div>
+        </div>
+        <div class="prescription-body">
+          <div style="font-size:12px; font-weight:700; color:var(--color-muted); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:12px" data-i18n="med.prescribed">Prescribed Medicines</div>
+          <div id="prescription-medicines"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="med.pharmOptions">Pharmacy Options</div>
+        <div class="section-subtitle" data-i18n="med.compare">Compare prices across online &amp; local pharmacies</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px">
+      <div class="platform-comparison" id="pharmacy-list"></div>
+    </div>
+    <div class="section-header" style="margin-top:8px">
+      <div>
+        <div class="section-title" data-i18n="med.localShops">Nearby Medical Shops</div>
+        <div class="section-subtitle" data-i18n="med.localCompare">Local pharmacies with stock &amp; pricing</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px">
+      <div class="pharmacy-table" id="local-pharmacy-list"></div>
+    </div>
+    <div class="section-header" style="margin-top:8px">
+      <div>
+        <div class="section-title" data-i18n="med.tracker">Delivery Tracker</div>
+        <div class="section-subtitle" id="delivery-eta" data-i18n="med.eta">Estimated delivery: 35–45 minutes</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px 16px">
+      <div class="card">
+        <div class="progress-tracker" id="delivery-tracker"></div>
+        <div style="text-align:center; margin-top:8px; font-size:11px; color:var(--color-muted)" data-i18n="med.autoTrack">📡 Auto-tracking from pharmacy site</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px 24px">
+      <button class="btn btn-success btn-full btn-lg" onclick="confirmOrder()" data-i18n="med.confirmOrder">💵 Confirm Order · Cash on Delivery</button>
+    </div>
+  </div>
+
+  <!-- CLINIC VIEW -->
+  <div id="view-clinic" class="view">
+    <div class="section-header">
+      <div>
+        <div class="section-title" data-i18n="clinic.title">Health Camps & Mobile Clinics</div>
+        <div class="section-subtitle" data-i18n="clinic.subtitle">Govt vans, health camps & medical colleges near you (100 km)</div>
+      </div>
+    </div>
+    <div style="padding: 0 16px; margin-bottom: 12px">
+      <div id="clinic-map" style="height:260px; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--color-border); background:var(--color-surface)"></div>
+    </div>
+    <div class="card-grid" id="clinic-list" style="margin-bottom:16px"></div>
+  </div>
+
+  <!-- FAMILY VIEW -->
+  <div id="view-family" class="view">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px 8px">
+      <div>
+        <div class="section-title" style="font-size:var(--font-size-xl)" data-i18n="fam.title">Family Account</div>
+        <div style="font-size:13px; color:var(--color-muted)" data-i18n="fam.location">Sharma Family · Gulbarga, Karnataka</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="btn-icon-circle btn-icon-add" onclick="showAddFamilyModal()" title="Add Member">＋</button>
+        <button class="btn-icon-circle btn-icon-remove" onclick="toggleRemoveMode()" title="Remove Member">−</button>
+        <button class="btn btn-ghost btn-sm" id="caretaker-btn" onclick="toggleCaretakerMode()" data-i18n="fam.caretaker">♿ Caretaker</button>
+      </div>
+    </div>
+    <div class="family-grid" id="family-grid"></div>
+    <div id="member-profile" style="padding:0 16px; margin-top:16px; display:none">
+      <div class="card" id="member-profile-card"></div>
+      <div style="margin-top:14px" id="risk-alerts"></div>
+      <div class="card" style="margin-top:12px">
+        <div style="font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px">
+          📈 <span data-i18n="fam.visitHistory">Visit History</span> <span class="badge badge-normal" id="risk-trend-badge">Stable</span>
+        </div>
+        <div class="health-chart" id="health-chart"></div>
+        <div style="display:flex; justify-content:space-between; padding-top:6px">
+          <span style="font-size:10px; color:var(--color-muted)">Sep</span>
+          <span style="font-size:10px; color:var(--color-muted)">Oct</span>
+          <span style="font-size:10px; color:var(--color-muted)">Nov</span>
+          <span style="font-size:10px; color:var(--color-muted)">Dec</span>
+          <span style="font-size:10px; color:var(--color-muted)">Jan</span>
+          <span style="font-size:10px; color:var(--color-muted)">Feb</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div style="font-size:14px; font-weight:700; margin-bottom:14px" data-i18n="fam.recentRx">📋 Recent Prescriptions</div>
+        <div id="member-prescriptions"></div>
+      </div>
+    </div>
+  </div>
+
+<!-- ADD FAMILY MEMBER MODAL -->
+<div class="modal-overlay" id="add-family-modal" onclick="if(event.target===this)closeAddFamilyModal()">
+  <div class="modal" style="max-width:380px">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px">
+      <div style="font-size:18px; font-weight:700" data-i18n="fam.addTitle">➕ Add Family Member</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddFamilyModal()">✕</button>
+    </div>
+    <div class="input-group" style="margin-bottom:12px">
+      <label class="input-label" data-i18n="fam.memberName">Name</label>
+      <input type="text" id="add-member-name" class="input" placeholder="E.g., Priya">
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+      <div class="input-group">
+        <label class="input-label" data-i18n="fam.memberRelation">Relation</label>
+        <select id="add-member-relation" class="input">
+          <option value="Self">Self</option>
+          <option value="Father">Father</option>
+          <option value="Mother">Mother</option>
+          <option value="Son">Son</option>
+          <option value="Daughter">Daughter</option>
+          <option value="Spouse">Spouse</option>
+          <option value="Brother">Brother</option>
+          <option value="Sister">Sister</option>
+          <option value="Grandfather">Grandfather</option>
+          <option value="Grandmother">Grandmother</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="consult.age">Age</label>
+        <input type="number" id="add-member-age" class="input" placeholder="Age" min="0" max="120">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="addFamilyMember()" data-i18n="fam.addBtn">Add Member</button>
+  </div>
+</div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <button class="nav-item active" data-view="home" onclick="navigateTo('home')">
+    <span class="nav-icon">🏠</span><span class="nav-label" data-i18n="nav.home">Home</span>
+  </button>
+  <button class="nav-item" data-view="consult" onclick="navigateTo('consult')">
+    <span class="nav-icon">🩺</span><span class="nav-label" data-i18n="nav.consult">Consult</span>
+  </button>
+  <button class="nav-item" data-view="medicines" onclick="navigateTo('medicines')">
+    <span class="nav-icon">💊</span><span class="nav-label" data-i18n="nav.medicines">Medicines</span>
+  </button>
+  <button class="nav-item" data-view="clinic" onclick="navigateTo('clinic')">
+    <span class="nav-icon">🚐</span><span class="nav-label" data-i18n="nav.clinic">Clinic</span>
+  </button>
+  <button class="nav-item" data-view="family" onclick="navigateTo('family')">
+    <span class="nav-icon">👨‍👩‍👧</span><span class="nav-label" data-i18n="nav.family">Family</span>
+  </button>
+</nav>
+
+<!-- ACCESSIBILITY FAB -->
+<button id="a11y-fab" onclick="toggleA11yPanel()" title="Accessibility Settings">♿</button>
+
+<!-- ACCESSIBILITY PANEL -->
+<div id="a11y-panel">
+  <div class="a11y-title" data-i18n="a11y.title">⚙️ Accessibility Settings</div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.elderly">🧓 Elderly / Caretaker Mode</span>
+    <button class="toggle-switch" id="toggle-caretaker" onclick="toggleA11y('caretaker')"></button>
+  </div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.iconNav">🖼 Icon Navigation Mode</span>
+    <button class="toggle-switch" id="toggle-icons" onclick="toggleA11y('icons')"></button>
+  </div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.lowBW">📶 Low Bandwidth Mode</span>
+    <button class="toggle-switch" id="toggle-bandwidth" onclick="toggleA11y('bandwidth')"></button>
+  </div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.voiceNav">🔊 Voice Navigation</span>
+    <button class="toggle-switch" id="toggle-voice-nav" onclick="toggleA11y('voiceNav')"></button>
+  </div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.highContrast">👁 High Contrast</span>
+    <button class="toggle-switch" id="toggle-contrast" onclick="toggleA11y('contrast')"></button>
+  </div>
+  <div class="a11y-toggle-row">
+    <span class="a11y-toggle-label" data-i18n="a11y.deaf">🔕 Deaf / Caption Mode</span>
+    <button class="toggle-switch" id="toggle-deaf" onclick="toggleA11y('deaf')"></button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-booking">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" data-i18n="modal.bookAppt">📅 Book Appointment</div>
+      <button class="modal-close" onclick="closeModal('modal-booking')">✕</button>
+    </div>
+    <div id="booking-doctor-info" style="margin-bottom:20px"></div>
+    <div style="font-size:13px; font-weight:700; color:var(--color-muted); letter-spacing:0.5px; text-transform:uppercase; margin-bottom:10px" data-i18n="modal.selectSlot">Select Time Slot</div>
+    <div class="slot-grid" id="slot-grid"></div>
+    <button class="btn btn-primary btn-full btn-lg" style="margin-top:18px" onclick="confirmBooking()" data-i18n="modal.confirmAppt">✓ Confirm Appointment</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-clinic-booking">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" data-i18n="modal.reserveClinic">🚐 Reserve Clinic Slot</div>
+      <button class="modal-close" onclick="closeModal('modal-clinic-booking')">✕</button>
+    </div>
+    <div id="clinic-booking-info"></div>
+    <div class="slot-grid" style="margin-top:16px" id="clinic-slot-grid"></div>
+    <button class="btn btn-primary btn-full btn-lg" style="margin-top:18px" onclick="confirmClinicBooking()" data-i18n="modal.reserveMy">✓ Reserve My Slot</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-relief">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" data-i18n="modal.reliefGuide">🩹 Instant Relief Guide</div>
+      <button class="modal-close" onclick="closeModal('modal-relief')">✕</button>
+    </div>
+    <div class="relief-disclaimer">
+      <div style="font-size:18px">⚠️</div>
+      <div style="font-size:13px; color:#92400E; line-height:1.5" data-i18n="modal.reliefWarn"><strong>Temporary guidance only.</strong> This does not replace medical care. Consult a doctor as soon as possible.</div>
+    </div>
+    <div id="relief-steps"></div>
+    <div style="margin-top:16px; padding:14px; background:var(--color-surface); border-radius:var(--radius-md); text-align:center">
+      <div style="font-size:12px; color:var(--color-muted); margin-bottom:8px" data-i18n="modal.nextResource">Next available resource in:</div>
+      <div style="font-size:28px; font-weight:700; color:var(--color-trust); font-family:var(--font-display)" id="relief-countdown">28:00</div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:16px">
+      <button class="btn btn-danger btn-full" onclick="triggerEmergency()" data-i18n="modal.emergencyCall">🚨 Emergency — Call 108</button>
+      <button class="btn btn-ghost btn-full" onclick="alertFamilyMember()" data-i18n="modal.alertFamily">📞 Alert Family</button>
+    </div>
+  </div>
+</div>
+
+<!-- JS MODULES -->
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/ui-doctors.js"></script>
+<script src="js/nearby-search.js"></script>
+<script src="js/ui-medicines.js"></script>
+<script src="js/ui-clinic.js"></script>
+<script src="js/ui-family.js"></script>
+<script src="js/supabase-db.js"></script>
+<script src="js/accessibility.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

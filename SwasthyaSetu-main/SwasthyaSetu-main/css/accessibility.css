@@ -1,0 +1,240 @@
+/* ═══════════════════════════════════════════════════
+   SwasthyaSetu — accessibility.css
+   Accessibility modes: caretaker, high-contrast,
+   lite mode, deaf mode, accessibility panel/FAB
+═══════════════════════════════════════════════════ */
+
+/* ── Accessibility FAB ── */
+#a11y-fab {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + 16px);
+  right: 16px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: white; border: none; cursor: pointer;
+  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-floating);
+  z-index: 200;
+  transition: all var(--transition-fast);
+}
+#a11y-fab:hover { transform: scale(1.1); }
+
+/* ── Accessibility Panel ── */
+#a11y-panel {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + 74px);
+  right: 16px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  width: 260px;
+  z-index: 200;
+  box-shadow: var(--shadow-modal);
+  animation: modal-up 0.25s var(--ease-out);
+}
+#a11y-panel.active { display: block; }
+
+.a11y-title       { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--color-ink); }
+.a11y-toggle-row  {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--color-border);
+}
+.a11y-toggle-row:last-child { border-bottom: none; }
+.a11y-toggle-label { font-size: 13px; color: var(--color-ink); }
+
+/* ── Toggle Switch ── */
+.toggle-switch {
+  width: 44px; height: 24px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  position: relative; cursor: pointer;
+  transition: background var(--transition-fast);
+  border: none; flex-shrink: 0;
+}
+.toggle-switch.on { background: var(--color-trust); }
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  background: white; border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform var(--transition-fast) var(--ease-out);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch.on::after { transform: translateX(20px); }
+
+/* ══════════════════════════════════════
+   MODE: CARETAKER (Elderly)
+   Large text, big touch targets, voice
+══════════════════════════════════════ */
+body.caretaker-mode {
+  --font-size-base: 20px;
+  --font-size-sm:   17px;
+  --font-size-md:   23px;
+  --font-size-lg:   28px;
+}
+body.caretaker-mode .btn           { min-height: 72px; font-size: 18px; border-radius: var(--radius-lg); }
+body.caretaker-mode .nav-label     { font-size: 13px; }
+body.caretaker-mode .doctor-name   { font-size: 20px; }
+body.caretaker-mode .family-name   { font-size: 20px; }
+body.caretaker-mode .card          { padding: 24px; }
+body.caretaker-mode .nav-item      { padding: 10px 14px; }
+body.caretaker-mode .nav-icon      { font-size: 26px; }
+body.caretaker-mode .input         { font-size: 18px; padding: 16px; min-height: 56px; }
+body.caretaker-mode .symptom-icon-btn { padding: 20px 10px; font-size: 14px; }
+body.caretaker-mode .symptom-emoji { font-size: 36px; }
+
+/* ══════════════════════════════════════
+   MODE: HIGH CONTRAST
+══════════════════════════════════════ */
+body.high-contrast {
+  --color-muted:         #334155;
+  --color-border:        #94A3B8;
+  --color-border-strong: #64748B;
+  --color-surface:       #F1F5F9;
+}
+body.high-contrast .card           { border-width: 2px; }
+body.high-contrast .doctor-card    { border-width: 2px; }
+body.high-contrast .btn-ghost      { border-width: 2px; }
+body.high-contrast .input          { border-width: 2px; }
+
+/* ══════════════════════════════════════
+   MODE: LOW BANDWIDTH (Lite)
+   No animations, text-first layout
+══════════════════════════════════════ */
+body.lite-mode * {
+  animation: none !important;
+  transition: none !important;
+}
+body.lite-mode .hero-section {
+  background: var(--color-trust);
+}
+body.lite-mode .hero-section::before { display: none; }
+body.lite-mode .stats-ticker         { background: var(--color-trust); }
+
+/* ══════════════════════════════════════
+   MODE: DEAF / HH
+   Visual-only alerts, captions, no audio
+══════════════════════════════════════ */
+body.deaf-mode [data-audio]          { display: none; }
+body.deaf-mode #emergency-overlay    { animation: none; background: var(--color-emergency); }
+body.deaf-mode .ticker-dot           { animation: none; }
+
+/* Hide voice input — unusable for deaf/mute */
+body.deaf-mode #tab-voice            { display: none !important; }
+body.deaf-mode #input-voice           { display: none !important; }
+body.deaf-mode .voice-btn            { display: none !important; }
+body.deaf-mode .voice-ring           { display: none !important; }
+
+/* Auto-promote text tab as primary */
+body.deaf-mode #tab-text             { background: var(--color-trust); color: #fff; }
+
+/* Enhanced toast for deaf mode — larger, longer visible */
+body.deaf-mode #toast {
+  font-size: 16px;
+  padding: 14px 22px;
+  border: 2px solid var(--color-trust);
+  box-shadow: 0 6px 30px rgba(26,86,219,0.25);
+  max-width: 90%;
+}
+
+/* Emergency overlay: strong visual border pulse instead of bg animation */
+body.deaf-mode #emergency-overlay.active {
+  border: 8px solid #fff;
+  box-shadow: inset 0 0 60px rgba(255,255,255,0.2);
+}
+
+/* ── Caption Bar (subtitle strip) ── */
+#deaf-caption-bar {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height, 62px) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-primary);
+  z-index: 9000;
+  max-width: 92%;
+  text-align: center;
+  line-height: 1.5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(-50%) translateY(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+#deaf-caption-bar.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#deaf-caption-bar.flash {
+  animation: caption-flash 0.5s ease;
+}
+@keyframes caption-flash {
+  0%   { background: rgba(26,86,219,0.9); }
+  100% { background: rgba(0,0,0,0.85); }
+}
+
+/* ── Screen Flash Overlay ── */
+#deaf-flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+#deaf-flash-overlay.active {
+  opacity: 1;
+  animation: deaf-screen-flash 0.7s ease-out;
+}
+@keyframes deaf-screen-flash {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+/* Visual pulse on SOS button for deaf users */
+body.deaf-mode .btn-sos {
+  animation: deaf-sos-pulse 2s ease-in-out infinite;
+}
+@keyframes deaf-sos-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,32,32,0.4); }
+  50%      { box-shadow: 0 0 0 8px rgba(224,32,32,0); }
+}
+
+/* Visual indicator badge that deaf mode is active */
+body.deaf-mode #a11y-fab::after {
+  content: '🔕';
+  position: absolute;
+  top: -4px; right: -4px;
+  font-size: 14px;
+  background: var(--color-white);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-xs);
+}
+
+/* Stronger visual emphasis on alerts in deaf mode */
+body.deaf-mode .risk-alert {
+  border-left: 4px solid var(--color-caution);
+  padding-left: 14px;
+}
+body.deaf-mode .risk-alert.hypertension {
+  border-left-color: var(--color-emergency);
+}
+body.deaf-mode .badge-emergency {
+  animation: deaf-badge-flash 1.2s ease-in-out infinite;
+}
+@keyframes deaf-badge-flash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
